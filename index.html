@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valhallist</title>
+<style>
+  :root {
+    --ink: #14110f;
+    --paper: #f5f0e6;
+    --paper-edge: #e7dfcd;
+    --line: #1a1714;
+    --signal: #1db954;      /* the one borrowed color: spotify green, earned */
+    --flag: #c8541f;        /* terracotta, only for "needs your eye" */
+    --muted: #6f655a;
+    --hair: #cfc6b4;
+    --good-bg: #eef3ea;
+    --flag-bg: #f7ece3;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    line-height: 1.5;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; }
+
+  header.masthead {
+    border-bottom: 2px solid var(--line);
+    padding: 40px 0 18px;
+    margin-bottom: 36px;
+  }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(38px, 8vw, 66px);
+    line-height: 0.96;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.015em;
+  }
+  h1 .arrow { color: var(--signal); font-style: italic; }
+  .sub {
+    margin: 16px 0 0;
+    max-width: 48ch;
+    color: var(--muted);
+    font-size: 16px;
+  }
+
+  .step-tag {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 14px;
+  }
+  .step-tag::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
+
+  textarea {
+    width: 100%;
+    min-height: 230px;
+    background: #fffdf8;
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 16px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--ink);
+    resize: vertical;
+  }
+  textarea:focus { outline: 2px solid var(--signal); outline-offset: 1px; }
+  .hint { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+  .hint code { background: var(--paper-edge); padding: 1px 5px; border-radius: 2px; }
+
+  input.text {
+    width: 100%;
+    background: #fffdf8;
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 11px 14px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  input.text:focus { outline: 2px solid var(--signal); outline-offset: 1px; }
+  label.fld { display: block; margin-bottom: 18px; }
+  label.fld .lab {
+    font-size: 13px; color: var(--muted); margin-bottom: 6px; display: block;
+  }
+
+  button {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1.5px solid var(--line);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 13px 22px;
+    border-radius: 2px;
+    transition: transform 0.06s ease, box-shadow 0.12s ease;
+  }
+  button:hover:not(:disabled) { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--line); }
+  button:active:not(:disabled) { transform: translate(0,0); box-shadow: none; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--ink); }
+  button.go { background: var(--signal); border-color: var(--line); color: #04210f; }
+  button.small { padding: 7px 12px; font-size: 12px; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  section.block { margin-bottom: 44px; }
+  .hidden { display: none !important; }
+
+  details.setup {
+    border: 1.5px solid var(--line);
+    border-radius: 2px;
+    padding: 0 16px;
+    margin-bottom: 28px;
+    background: #fffdf8;
+  }
+  details.setup summary {
+    cursor: pointer;
+    padding: 14px 0;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+  }
+  details.setup[open] summary { border-bottom: 1px solid var(--hair); margin-bottom: 14px; }
+  details.setup ol { padding-left: 20px; margin: 0 0 16px; font-size: 14px; }
+  details.setup li { margin-bottom: 9px; }
+  details.setup code {
+    background: var(--paper-edge); padding: 1px 5px; border-radius: 2px;
+    font-size: 12.5px; word-break: break-all;
+  }
+
+  /* results */
+  .summary-bar {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    border-top: 2px solid var(--line);
+    border-bottom: 1px solid var(--hair);
+    padding: 16px 0; margin-bottom: 8px;
+  }
+  .stat .n { font-size: 30px; font-weight: 600; line-height: 1; }
+  .stat .l { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+  .stat.flagged .n { color: var(--flag); }
+  .stat.good .n { color: var(--signal); filter: saturate(0.6) brightness(0.8); }
+
+  ul.tracks { list-style: none; padding: 0; margin: 0; }
+  li.track {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  li.track .idx { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); }
+  .q-in { font-size: 15px; }
+  .q-in .artist { color: var(--muted); }
+  .matched {
+    font-size: 13px; color: var(--muted); margin-top: 3px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .matched .album { opacity: 0.7; }
+  .tag {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 8px; border-radius: 2px; white-space: nowrap;
+  }
+  .tag.ok { background: var(--good-bg); color: #2f6b3f; border: 1px solid #cfe0cf; }
+  .tag.flag { background: var(--flag-bg); color: var(--flag); border: 1px solid #e6c9b3; }
+  .tag.miss { background: #f3e9e9; color: #9a3b3b; border: 1px solid #e2c9c9; }
+  li.track.is-flagged { background: linear-gradient(90deg, var(--flag-bg), transparent 60%); margin: 0 -12px; padding-left: 12px; padding-right: 12px; }
+  li.track.dropped { opacity: 0.42; }
+  li.track.dropped .q-in { text-decoration: line-through; }
+  .alts { grid-column: 2 / 4; margin-top: 8px; }
+  .alt {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; margin-top: 6px;
+    border: 1px solid var(--hair); border-radius: 2px;
+    background: #fffdf8; font-size: 13px;
+  }
+  .alt .mono { font-size: 12.5px; }
+  .alt button { padding: 5px 10px; font-size: 11px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper);
+    padding: 12px 20px; border-radius: 3px; font-size: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25); z-index: 50;
+    max-width: 90vw;
+  }
+  .toast.err { background: #7a2222; }
+  a { color: var(--flag); }
+  .spin {
+    display: inline-block; width: 13px; height: 13px;
+    border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: sp 0.7s linear infinite; vertical-align: -1px;
+  }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .success-head { border-top: 2px solid var(--signal); padding-top: 20px; }
+  .success-head h2 { font-size: 26px; margin: 0 0 6px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  @media (max-width: 540px) {
+    li.track { grid-template-columns: 22px 1fr; }
+    li.track .tag { grid-column: 2; justify-self: start; margin-top: 6px; }
+    .alts { grid-column: 1 / 3; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">A personal utility · runs in your browser</p>
+    <h1>Valhall<span class="arrow">i</span>st</h1>
+    <p class="sub">Paste a list of songs, one per line. It gathers each one from Spotify, shows you what it found, and lets you fix anything uncertain before the playlist is assembled.</p>
+  </header>
+
+  <!-- SETUP -->
+  <details class="setup" id="setupBox">
+    <summary>First time? Connect your Spotify app (one-time, ~5 min)</summary>
+    <ol>
+      <li>Go to the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify Developer Dashboard</a> and click <strong>Create app</strong>.</li>
+      <li>Name it anything (e.g. "My Playlist Tool"). For <strong>Redirect URI</strong>, add the exact address this page is open at — shown below — then save.</li>
+      <li>In the app's settings, copy the <strong>Client ID</strong> and paste it below.</li>
+      <li>Under <strong>APIs used</strong>, make sure <em>Web API</em> is checked.</li>
+    </ol>
+    <p class="hint">This page's redirect URI (copy it exactly into Spotify):<br>
+      <code id="redirShow"></code></p>
+    <label class="fld" style="margin-top:14px;">
+      <span class="lab">Spotify Client ID</span>
+      <input class="text" id="clientId" placeholder="e.g. 4a1b2c3d…" autocomplete="off" spellcheck="false">
+    </label>
+    <p class="hint">Stored only in this browser (localStorage), never sent anywhere but Spotify.</p>
+  </details>
+
+  <!-- STEP 1: INPUT -->
+  <section class="block" id="inputBlock">
+    <p class="step-tag">Step 1 — Your list</p>
+    <textarea id="listInput" spellcheck="false" placeholder="Marvin Gaye - Let's Get It On
+Daniel Caesar - Best Part (feat. H.E.R.)
+Etta James - At Last
+D'Angelo - Untitled (How Does It Feel)"></textarea>
+    <p class="hint">One song per line. <code>Artist - Title</code> works best, but <code>Title - Artist</code> and plain <code>Title</code> are handled too. Blank lines and <code>#</code> comments are ignored.</p>
+
+    <label class="fld" style="margin-top:22px;">
+      <span class="lab">Playlist name</span>
+      <input class="text" id="plName" placeholder="The Conversation — reference mix">
+    </label>
+
+    <div class="row">
+      <button class="go" id="connectBtn">Connect Spotify &amp; find tracks</button>
+      <button class="ghost" id="resetBtn">Reset</button>
+    </div>
+    <p class="hint" id="connNote"></p>
+  </section>
+
+  <!-- STEP 2: REVIEW -->
+  <section class="block hidden" id="reviewBlock">
+    <p class="step-tag">Step 2 — Review the matches</p>
+    <div class="summary-bar" id="summaryBar"></div>
+    <p class="hint">Confident matches are kept automatically. <strong style="color:var(--flag)">Flagged</strong> rows found a result but weren't sure — check them, swap to an alternative, or drop them. Then create the playlist.</p>
+    <ul class="tracks" id="trackList"></ul>
+    <div class="row" style="margin-top:26px;">
+      <button class="go" id="createBtn">Create playlist with kept tracks</button>
+      <button class="ghost" id="backBtn">Back to list</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: DONE -->
+  <section class="block hidden" id="doneBlock">
+    <div class="success-head">
+      <h2 id="doneTitle">Playlist created</h2>
+      <p class="sub" id="doneMsg"></p>
+      <div class="row" style="margin-top:18px;">
+        <a id="openSpotify" target="_blank" rel="noopener"><button class="go">Open in Spotify</button></a>
+        <button class="ghost" id="againBtn">Make another</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- config / storage ----------
+  const REDIRECT_URI = window.location.origin + window.location.pathname;
+  const SCOPES = "playlist-modify-public playlist-modify-private";
+  const LS_CID = "plc_client_id";
+  const LS_VERIFIER = "plc_pkce_verifier";
+  const LS_PENDING = "plc_pending"; // stash list+name across the auth redirect
+
+  const $ = id => document.getElementById(id);
+  document.getElementById("redirShow").textContent = REDIRECT_URI;
+
+  // restore saved client id
+  const savedCid = localStorage.getItem(LS_CID);
+  if (savedCid) $("clientId").value = savedCid;
+
+  let TOKEN = null;
+  let ME = null;
+  let RESULTS = [];   // [{query, found:[...], chosenId, status}]
+
+  function toast(msg, isErr) {
+    const t = document.createElement("div");
+    t.className = "toast" + (isErr ? " err" : "");
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), isErr ? 5200 : 3200);
+  }
+
+  // ---------- PKCE helpers ----------
+  function randString(n) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+    const a = crypto.getRandomValues(new Uint8Array(n));
+    return Array.from(a, x => chars[x % chars.length]).join("");
+  }
+  async function sha256b64url(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    let bin = "";
+    new Uint8Array(buf).forEach(b => bin += String.fromCharCode(b));
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  async function beginAuth() {
+    const cid = $("clientId").value.trim();
+    if (!cid) {
+      toast("Add your Spotify Client ID first — open the setup panel.", true);
+      $("setupBox").open = true;
+      return;
+    }
+    localStorage.setItem(LS_CID, cid);
+
+    // stash the work so it survives the round-trip
+    localStorage.setItem(LS_PENDING, JSON.stringify({
+      list: $("listInput").value,
+      name: $("plName").value
+    }));
+
+    const verifier = randString(64);
+    localStorage.setItem(LS_VERIFIER, verifier);
+    const challenge = await sha256b64url(verifier);
+
+    const p = new URLSearchParams({
+      client_id: cid,
+      response_type: "code",
+      redirect_uri: REDIRECT_URI,
+      scope: SCOPES,
+      code_challenge_method: "S256",
+      code_challenge: challenge
+    });
+    window.location.href = "https://accounts.spotify.com/authorize?" + p.toString();
+  }
+
+  async function exchangeToken(code) {
+    const cid = localStorage.getItem(LS_CID);
+    const verifier = localStorage.getItem(LS_VERIFIER);
+    const body = new URLSearchParams({
+      client_id: cid,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: verifier
+    });
+    const r = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+    if (!r.ok) throw new Error("Token exchange failed (" + r.status + ")");
+    const j = await r.json();
+    return j.access_token;
+  }
+
+  // ---------- spotify api ----------
+  async function api(path, opts = {}) {
+    const r = await fetch("https://api.spotify.com/v1" + path, {
+      ...opts,
+      headers: {
+        "Authorization": "Bearer " + TOKEN,
+        "Content-Type": "application/json",
+        ...(opts.headers || {})
+      }
+    });
+    if (r.status === 401) throw new Error("Session expired — reconnect.");
+    if (!r.ok) {
+      let detail = "";
+      try { detail = (await r.json()).error?.message || ""; } catch {}
+      throw new Error("Spotify error " + r.status + (detail ? ": " + detail : ""));
+    }
+    return r.status === 204 ? null : r.json();
+  }
+
+  // ---------- parsing ----------
+  function parseLine(raw) {
+    let line = raw.trim();
+    if (!line || line.startsWith("#")) return null;
+    // strip leading list numbering like "1." or "12)"
+    line = line.replace(/^\s*\d+[\.\)]\s*/, "");
+    // common separators: " - ", " – ", " — ", " by ", tab
+    const seps = [/\s[-–—]\s/, /\s+by\s+/i, /\t+/];
+    for (const s of seps) {
+      const m = line.split(s);
+      if (m.length >= 2) {
+        return { artist: m[0].trim(), title: m.slice(1).join(" ").trim(), raw: line };
+      }
+    }
+    return { artist: "", title: line, raw: line };
+  }
+
+  // ---------- matching / scoring ----------
+  function norm(s) {
+    return (s || "")
+      .toLowerCase()
+      .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\(.*?\)|\[.*?\]/g, " ")            // drop parenv notes for comparison
+      .replace(/\bfeat\.?\b|\bft\.?\b|\bwith\b/g, " ")
+      .replace(/[^a-z0-9 ]/g, " ")
+      .replace(/\s+/g, " ").trim();
+  }
+  function tokenSet(s) { return new Set(norm(s).split(" ").filter(Boolean)); }
+  function jaccard(a, b) {
+    const A = tokenSet(a), B = tokenSet(b);
+    if (!A.size || !B.size) return 0;
+    let inter = 0; A.forEach(x => { if (B.has(x)) inter++; });
+    return inter / (A.size + B.size - inter);
+  }
+
+  const PENALTY = /\b(live|remix|karaoke|cover|instrumental|sped up|slowed|reverb|acoustic version|re-?recorded|taylor'?s version)\b/i;
+
+  function scoreCandidate(q, tr) {
+    const trackArtists = tr.artists.map(a => a.name).join(" ");
+    const titleSim = jaccard(q.title, tr.name);
+    const artistSim = q.artist ? jaccard(q.artist, trackArtists) : 0.5; // neutral if no artist given
+    let score = titleSim * 0.62 + artistSim * 0.38;
+
+    // exact-ish title bump
+    if (norm(q.title) === norm(tr.name)) score += 0.08;
+    // penalize live/remix/cover unless the query asked for it
+    if (PENALTY.test(tr.name) && !PENALTY.test(q.title)) score -= 0.30;
+    // popularity as a gentle tiebreaker only
+    score += (tr.popularity || 0) / 1000;
+    return Math.max(0, Math.min(1, score));
+  }
+
+  async function searchOne(q) {
+    // structured query first
+    let query = q.artist
+      ? `track:${q.title} artist:${q.artist}`
+      : q.title;
+    let data = await api("/search?type=track&limit=8&q=" + encodeURIComponent(query));
+    let items = data.tracks?.items || [];
+    // fallback: loose query if structured found nothing
+    if (!items.length) {
+      const loose = (q.artist ? q.artist + " " : "") + q.title;
+      data = await api("/search?type=track&limit=8&q=" + encodeURIComponent(loose));
+      items = data.tracks?.items || [];
+    }
+    const scored = items.map(tr => ({ tr, score: scoreCandidate(q, tr) }))
+                        .sort((a, b) => b.score - a.score);
+    return scored;
+  }
+
+  const TH_GOOD = 0.62;   // auto-keep above this
+  const TH_MAYBE = 0.30;  // below TH_GOOD but above this = flag for review; below = treat as miss
+
+  async function runMatching(parsed) {
+    RESULTS = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const q = parsed[i];
+      let scored = [];
+      try { scored = await searchOne(q); }
+      catch (e) { toast(e.message, true); throw e; }
+
+      const top = scored[0];
+      let status, chosenId = null;
+      if (!top || top.score < TH_MAYBE) {
+        status = "miss";
+      } else if (top.score >= TH_GOOD) {
+        status = "ok"; chosenId = top.tr.id;
+      } else {
+        status = "flag"; chosenId = top.tr.id; // provisionally chosen, user confirms
+      }
+      RESULTS.push({
+        q, status, chosenId,
+        candidates: scored.slice(0, 4).map(s => ({
+          id: s.tr.id, name: s.tr.name,
+          artists: s.tr.artists.map(a => a.name).join(", "),
+          album: s.tr.album?.name || "", score: s.score, uri: s.tr.uri
+        }))
+      });
+    }
+  }
+
+  // ---------- rendering ----------
+  function chosenCand(r) { return r.candidates.find(c => c.id === r.chosenId) || null; }
+
+  function renderReview() {
+    const kept = RESULTS.filter(r => r.chosenId && r.status !== "dropped").length;
+    const flagged = RESULTS.filter(r => r.status === "flag").length;
+    const missed = RESULTS.filter(r => r.status === "miss").length;
+
+    $("summaryBar").innerHTML = `
+      <div class="stat good"><div class="n">${kept}</div><div class="l">to be added</div></div>
+      <div class="stat flagged"><div class="n">${flagged}</div><div class="l">need your eye</div></div>
+      <div class="stat"><div class="n">${missed}</div><div class="l">not found</div></div>
+    `;
+
+    const ul = $("trackList");
+    ul.innerHTML = "";
+    RESULTS.forEach((r, i) => {
+      const li = document.createElement("li");
+      li.className = "track" + (r.status === "flag" ? " is-flagged" : "") + (r.status === "dropped" ? " dropped" : "");
+
+      const idx = `<span class="idx">${String(i + 1).padStart(2, "0")}</span>`;
+      const cur = chosenCand(r);
+      const qHtml = `<div class="q-in">${esc(r.q.title)}${r.q.artist ? ` <span class="artist">· ${esc(r.q.artist)}</span>` : ""}</div>`;
+      const matchHtml = cur && r.status !== "miss" && r.status !== "dropped"
+        ? `<div class="matched">→ ${esc(cur.name)} · ${esc(cur.artists)} <span class="album">(${esc(cur.album)})</span></div>`
+        : (r.status === "dropped" ? `<div class="matched">dropped</div>` : `<div class="matched">no match found</div>`);
+
+      let tag;
+      if (r.status === "ok") tag = `<span class="tag ok">matched</span>`;
+      else if (r.status === "flag") tag = `<span class="tag flag">check</span>`;
+      else if (r.status === "dropped") tag = `<span class="tag miss">dropped</span>`;
+      else tag = `<span class="tag miss">not found</span>`;
+
+      li.innerHTML = idx + `<div>${qHtml}${matchHtml}</div>` + tag;
+
+      // alternatives panel for flagged + non-missing
+      if ((r.status === "flag" || r.status === "ok") && r.candidates.length) {
+        const alts = document.createElement("div");
+        alts.className = "alts";
+        r.candidates.forEach(c => {
+          if (c.id === r.chosenId) return;
+          const a = document.createElement("div");
+          a.className = "alt";
+          a.innerHTML = `<span class="mono" style="flex:1">${esc(c.name)} · ${esc(c.artists)} <span class="album">(${esc(c.album)})</span></span>`;
+          const b = document.createElement("button");
+          b.className = "small ghost"; b.textContent = "use this";
+          b.onclick = () => { r.chosenId = c.id; r.status = "ok"; renderReview(); };
+          a.appendChild(b);
+          alts.appendChild(a);
+        });
+        // drop / restore control
+        const ctrl = document.createElement("div");
+        ctrl.className = "alt";
+        ctrl.style.borderStyle = "dashed";
+        const db = document.createElement("button");
+        db.className = "small ghost";
+        if (r.status === "dropped") {
+          db.textContent = "restore";
+          db.onclick = () => { r.status = r.candidates.length ? "flag" : "miss"; r.chosenId = r.candidates[0]?.id || null; renderReview(); };
+        } else {
+          db.textContent = "drop this track";
+          db.onclick = () => { r.status = "dropped"; renderReview(); };
+        }
+        ctrl.innerHTML = `<span class="mono" style="flex:1;color:var(--muted)">not what you meant?</span>`;
+        ctrl.appendChild(db);
+        alts.appendChild(ctrl);
+        li.appendChild(alts);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  function esc(s) {
+    return (s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+
+  // ---------- create playlist ----------
+  async function createPlaylist() {
+    const ids = RESULTS.filter(r => r.chosenId && r.status !== "dropped" && r.status !== "miss")
+                       .map(r => chosenCand(r)?.uri).filter(Boolean);
+    if (!ids.length) { toast("Nothing to add — every track is dropped or unmatched.", true); return; }
+
+    const name = ($("plName").value.trim()) || "New playlist";
+    const btn = $("createBtn");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span> Creating…`;
+    try {
+      const pl = await api(`/users/${ME.id}/playlists`, {
+        method: "POST",
+        body: JSON.stringify({ name, public: false, description: "Gathered with Valhallist." })
+      });
+      // add in batches of 100
+      for (let i = 0; i < ids.length; i += 100) {
+        await api(`/playlists/${pl.id}/tracks`, {
+          method: "POST",
+          body: JSON.stringify({ uris: ids.slice(i, i + 100) })
+        });
+      }
+      $("reviewBlock").classList.add("hidden");
+      $("doneBlock").classList.remove("hidden");
+      $("doneTitle").textContent = "“" + name + "” is ready";
+      $("doneMsg").textContent = `${ids.length} track${ids.length === 1 ? "" : "s"} added to your library.`;
+      $("openSpotify").href = pl.external_urls.spotify;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      toast(e.message, true);
+      btn.disabled = false;
+      btn.textContent = "Create playlist with kept tracks";
+    }
+  }
+
+  // ---------- flow control ----------
+  async function startFindFlow() {
+    // already have token? go straight to matching
+    const parsed = $("listInput").value.split("\n").map(parseLine).filter(Boolean);
+    if (!parsed.length) { toast("Add at least one song to your list.", true); return; }
+
+    if (!TOKEN) { await beginAuth(); return; } // will redirect
+
+    const btn = $("connectBtn");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span> Searching ${parsed.length} tracks…`;
+    try {
+      await runMatching(parsed);
+      $("inputBlock").classList.add("hidden");
+      $("reviewBlock").classList.remove("hidden");
+      renderReview();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      btn.disabled = false;
+      btn.textContent = "Connect Spotify & find tracks";
+    }
+  }
+
+  // ---------- handle auth redirect on load ----------
+  async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const err = params.get("error");
+    if (err) { toast("Spotify authorization was declined.", true); history.replaceState({}, "", REDIRECT_URI); }
+
+    if (code) {
+      try {
+        TOKEN = await exchangeToken(code);
+        history.replaceState({}, "", REDIRECT_URI); // clean the url
+        ME = await api("/me");
+        $("connNote").textContent = "Connected as " + (ME.display_name || ME.id) + ".";
+        // restore stashed work
+        const pend = localStorage.getItem(LS_PENDING);
+        if (pend) {
+          const { list, name } = JSON.parse(pend);
+          if (list) $("listInput").value = list;
+          if (name) $("plName").value = name;
+          localStorage.removeItem(LS_PENDING);
+        }
+        // auto-run matching now that we're back and authed
+        if ($("listInput").value.trim()) startFindFlow();
+      } catch (e) {
+        toast(e.message, true);
+      }
+    }
+  }
+
+  // ---------- wire up ----------
+  $("connectBtn").onclick = startFindFlow;
+  $("createBtn").onclick = createPlaylist;
+  $("backBtn").onclick = () => {
+    $("reviewBlock").classList.add("hidden");
+    $("inputBlock").classList.remove("hidden");
+  };
+  $("againBtn").onclick = () => {
+    $("doneBlock").classList.add("hidden");
+    $("inputBlock").classList.remove("hidden");
+    $("listInput").value = ""; $("plName").value = "";
+    RESULTS = [];
+  };
+  $("resetBtn").onclick = () => { $("listInput").value = ""; $("plName").value = ""; };
+  $("clientId").onchange = () => localStorage.setItem(LS_CID, $("clientId").value.trim());
+
+  init();
+})();
+</script>
+</body>
+</html>
